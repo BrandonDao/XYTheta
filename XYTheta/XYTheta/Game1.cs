@@ -6,23 +6,31 @@ namespace XYTheta
 {
     public class Game1 : Game
     {
-        private GraphicsDeviceManager graphics;
-        private SpriteBatch spriteBatch;
+        public const int FieldLengthPx = 2790 / 2;
+        public const int FieldHeightPx = 1350 / 2;
+        public const int RobotSizePx = 100;
 
-        Texture2D circleTexture;
-
+        GraphicsDeviceManager graphics;
+        SpriteBatch spriteBatch;
+        
+        Texture2D robotTexture;
         Texture2D fieldTexture;
+
         readonly Rectangle fieldRectangle;
+
+        KeyboardState previousKeyboardState;
+
+        Robot robot;
+
+
 
         public Game1()
         {
-            Datapoint x;
-            x.LeftPosition;
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
 
-            fieldRectangle = new Rectangle(0, 0, 2790 / 2, 1350 / 2);
+            fieldRectangle = new Rectangle(0, 0, FieldLengthPx, FieldHeightPx);
 
             graphics.PreferredBackBufferWidth = fieldRectangle.Width;
             graphics.PreferredBackBufferHeight = fieldRectangle.Height;
@@ -31,7 +39,6 @@ namespace XYTheta
 
         protected override void Initialize()
         {
-
             base.Initialize();
         }
 
@@ -39,8 +46,10 @@ namespace XYTheta
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            circleTexture = Content.Load<Texture2D>("circle");
+            robotTexture = Content.Load<Texture2D>("wonkypope");
             fieldTexture = Content.Load<Texture2D>("field");
+
+            robot = new Robot(@"..\..\..\EncoderData.txt", robotTexture);
         }
 
         protected override void Update(GameTime gameTime)
@@ -49,8 +58,12 @@ namespace XYTheta
 
             if (keyboardState.IsKeyDown(Keys.Escape)) Exit();
 
-            
+            if(keyboardState.IsKeyDown(Keys.Space) && previousKeyboardState.IsKeyUp(Keys.Space))
+            {
+                robot.UpdateState();
+            }
 
+            previousKeyboardState = keyboardState;
             base.Update(gameTime);
         }
 
@@ -61,7 +74,8 @@ namespace XYTheta
             spriteBatch.Begin();
 
             spriteBatch.Draw(fieldTexture, fieldRectangle, Color.White);
-            spriteBatch.Draw(circleTexture, new Rectangle(125 - 10, 600 - 10, 20, 20), Color.Red);
+
+            robot.Draw(spriteBatch);
 
             spriteBatch.End();
 
