@@ -1,4 +1,4 @@
-﻿namespace XYTheta
+﻿namespace XYTheta.CoreXYTheta
 {
     public readonly struct Datapoint
     {
