@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.IO;
 using XYTheta.Display;
 
 namespace XYTheta
@@ -9,9 +10,10 @@ namespace XYTheta
     {
         readonly GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        
+
         Texture2D robotTexture;
         Texture2D fieldTexture;
+        Texture2D blankTexture;
 
         readonly Rectangle fieldRectangle;
 
@@ -27,11 +29,14 @@ namespace XYTheta
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
 
-            fieldRectangle = new Rectangle(0, 0, DisplayConsts.FieldLengthPx, DisplayConsts.FieldHeightPx);
+            fieldRectangle = new Rectangle(
+                x: 0,
+                y: 0,
+                width: DisplayConsts.FieldLengthPx,
+                height: DisplayConsts.FieldHeightPx);
 
             graphics.PreferredBackBufferWidth = fieldRectangle.Width;
             graphics.PreferredBackBufferHeight = fieldRectangle.Height;
-
         }
 
         protected override void Initialize()
@@ -43,10 +48,13 @@ namespace XYTheta
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            robotTexture = Content.Load<Texture2D>("wonkypope");
+            blankTexture = new Texture2D(GraphicsDevice, width: 1, height: 1);
+            blankTexture.SetData(new Color[] { Color.Red });
+
+            robotTexture = Content.Load<Texture2D>("PopeMobile");
             fieldTexture = Content.Load<Texture2D>("field");
 
-            robot = new Robot(@"..\..\..\CoreXYTheta\EncoderData.txt", robotTexture);
+            robot = new Robot(@"..\..\..\CoreXYTheta\EncoderData.txt", robotTexture, Robot.Modes.Playback);
         }
 
         protected override void Update(GameTime gameTime)
@@ -55,7 +63,12 @@ namespace XYTheta
 
             if (keyboardState.IsKeyDown(Keys.Escape)) Exit();
 
-            robot.Update(keyboardState, previousKeyboardState);
+            robot.Update(keyboardState, previousKeyboardState, gameTime.ElapsedGameTime);
+
+            if (previousKeyboardState.IsKeyUp(Keys.S) && keyboardState.IsKeyDown(Keys.LeftControl) && keyboardState.IsKeyDown(Keys.S))
+            {
+                File.WriteAllLines("VirtualControlLog.csv", robot.ExportDatapointsAsCSV());
+            }
 
             previousKeyboardState = keyboardState;
             base.Update(gameTime);
@@ -63,11 +76,12 @@ namespace XYTheta
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.White);
 
             spriteBatch.Begin();
 
             spriteBatch.Draw(fieldTexture, fieldRectangle, Color.White);
+
             robot.Draw(spriteBatch);
 
             spriteBatch.End();

@@ -5,7 +5,7 @@ namespace XYTheta.CoreXYTheta
     public static class CoreConsts
     {
         public const decimal StartingXCm = 23;
-        public const decimal StartingYCm = 90;
+        public const decimal StartingYCm = 95;
         public const decimal StartingTheta = (decimal)Math.PI / 2M;
 
         public const decimal RobotRadiusDeg = 127.21875M; // in degrees

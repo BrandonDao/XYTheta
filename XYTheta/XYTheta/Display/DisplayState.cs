@@ -6,8 +6,6 @@ namespace XYTheta.Display
 {
     public readonly struct DisplayState
     {
-        public static Vector2 RotationOrigin { get; } = new Vector2(DisplayConsts.RobotSizePx);
-
         public Rectangle DestinationRectangle { get; }
         public float Rotation { get; }
 

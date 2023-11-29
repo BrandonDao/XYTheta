@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using XYTheta.Display;
 
 namespace XYTheta.CoreXYTheta
 {
@@ -17,7 +19,7 @@ namespace XYTheta.CoreXYTheta
         public decimal X { get; } // in degrees
         public decimal Y { get; } // in degrees
         public decimal Theta { get; } // in radians
-        public int ThetaDegrees => (int)(Theta * 180 / (decimal)Math.PI);
+        public decimal ThetaDegrees => Theta * 180 / (decimal)Math.PI;
 
 
         private RobotState(decimal angle, int x, int y, Datapoint datapoint)
@@ -43,20 +45,24 @@ namespace XYTheta.CoreXYTheta
             decimal deltaY = (decimal)Math.Sin((double)Theta) * deltaCenter;
 
             X = previousState.X - deltaX;
-            Y = previousState.Y + -deltaY;
+            Y = previousState.Y - deltaY;
         }
 
-        public static RobotState[] ParseEncoderData(string encoderDataFilePath) => ParseEncoderData(encoderDataFilePath, BaseState);
-        public static RobotState[] ParseEncoderData(string encoderDataFilePath, RobotState baseState)
+        public static List<RobotState> ParseEncoderData(string encoderDataFilePath, Robot.Modes mode) => ParseEncoderData(encoderDataFilePath, BaseState, mode);
+        public static List<RobotState> ParseEncoderData(string encoderDataFilePath, RobotState baseState, Robot.Modes mode)
         {
+            if (mode != Robot.Modes.Playback) return new List<RobotState>() { baseState };
+
             var datapointsToRead = File.ReadAllLines(encoderDataFilePath);
-            var states = new RobotState[datapointsToRead.Length + 1];
-            states[0] = baseState;
+            var states = new List<RobotState>(datapointsToRead.Length + 1)
+            {
+                baseState
+            };
 
             for (int i = 0; i < datapointsToRead.Length; i++)
             {
                 string[] data = datapointsToRead[i].Split(',');
-                states[i + 1] = new(states[i], new Datapoint(int.Parse(data[0]), int.Parse(data[1]), int.Parse(data[2])));
+                states.Add(new(states[i], new Datapoint(int.Parse(data[0]), int.Parse(data[1]), int.Parse(data[2]))));
             }
 
             return states;
