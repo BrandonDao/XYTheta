@@ -12,6 +12,7 @@ namespace XYTheta
         SpriteBatch spriteBatch;
 
         Texture2D robotTexture;
+        Texture2D waypointTexture;
         Texture2D fieldTexture;
         Texture2D blankTexture;
 
@@ -54,7 +55,7 @@ namespace XYTheta
             robotTexture = Content.Load<Texture2D>("PopeMobile");
             fieldTexture = Content.Load<Texture2D>("field");
 
-            robot = new Robot(@"..\..\..\CoreXYTheta\EncoderData.txt", robotTexture, Robot.Modes.Playback);
+            robot = new Robot(@"..\..\..\CoreXYTheta\EncoderData.txt", robotTexture, waypointTexture: robotTexture, Robot.Modes.VirtualControl);
         }
 
         protected override void Update(GameTime gameTime)
@@ -62,6 +63,15 @@ namespace XYTheta
             var keyboardState = Keyboard.GetState();
 
             if (keyboardState.IsKeyDown(Keys.Escape)) Exit();
+
+            if (keyboardState.IsKeyDown(Keys.Q))
+            {
+                robot.Mode = Robot.Modes.VirtualControl;
+            }
+            if (keyboardState.IsKeyDown(Keys.E))
+            {
+                robot.Mode = Robot.Modes.Playback;
+            }
 
             robot.Update(keyboardState, previousKeyboardState, gameTime.ElapsedGameTime);
 

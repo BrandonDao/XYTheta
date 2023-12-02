@@ -6,7 +6,7 @@ using XYTheta.Display;
 
 namespace XYTheta.CoreXYTheta
 {
-    [DebuggerDisplay("Θ: {ΘDegrees}   ({X}, {Y})   (L: {Datapoint.LeftPosition}, R: {Datapoint.RightPosition})")]
+    [DebuggerDisplay("Θ: {ThetaDegrees}   ({X}, {Y})   (L: {Datapoint.LeftPosition}, R: {Datapoint.RightPosition})")]
     public readonly struct RobotState
     {
         public static RobotState BaseState { get; } = new(

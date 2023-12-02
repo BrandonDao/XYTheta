@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using MonoGame.Extended;
 using System;
 using System.Collections.Generic;
 using XYTheta.CoreXYTheta;
@@ -16,32 +17,41 @@ namespace XYTheta.Display
         }
 
         public List<RobotState> States { get; private set; }
+        public List<int> WaypointIndices { get; private set; }
         public RobotState CurrentState => States[currentStateIndex];
         private int currentStateIndex;
 
-        public Modes Mode { get; private set; }
+        public Modes Mode { get; set; }
 
         public Texture2D Texture { get; private set; }
+        public Texture2D WaypointTexture { get; private set; }
 
         private readonly Rectangle sourceRectangle;
         private readonly List<DisplayState> displayStates;
+        private readonly List<DisplayState> waypointDisplayStates;
 
         private const int fastStateIncrement = 2;
 
         private readonly TimeSpan continuousArrowKeyDelay = TimeSpan.FromMilliseconds(500);
 
+        private readonly Color WaypointColor = new(200, 200, 200, 150);
+
         private TimeSpan playbackTimer;
         private TimeSpan continuousArrowKeyTimer;
 
         private bool isPaused;
+        private bool isShowingAllWaypoints;
 
 
-        public Robot(string encoderDataFilePath, Texture2D texture, Modes mode)
+        public Robot(string encoderDataFilePath, Texture2D texture, Texture2D waypointTexture, Modes mode)
         {
             Texture = texture;
+            WaypointTexture = waypointTexture;
             Mode = mode;
             States = RobotState.ParseEncoderData(encoderDataFilePath, mode);
+            WaypointIndices = new List<int>();
             displayStates = new List<DisplayState>(States.Count);
+            waypointDisplayStates = new List<DisplayState>();
             sourceRectangle = new Rectangle(0, 0, texture.Width, texture.Height);
 
             for (int i = 0; i < displayStates.Capacity; i++)
@@ -71,7 +81,7 @@ namespace XYTheta.Display
             switch (Mode)
             {
                 case Modes.Playback: UpdatePlayback(keyboardState, previousKeyboardState); break;
-                case Modes.VirtualControl: UpdateVirtualControl(keyboardState); break;
+                case Modes.VirtualControl: UpdateVirtualControl(keyboardState, previousKeyboardState); break;
             }
         }
 
@@ -141,7 +151,7 @@ namespace XYTheta.Display
             }
 
         }
-        private void UpdateVirtualControl(KeyboardState keyboardState)
+        private void UpdateVirtualControl(KeyboardState keyboardState, KeyboardState previousKeyboardState)
         {
             int deltaLeft = 0;
             int deltaRight = 0;
@@ -170,22 +180,84 @@ namespace XYTheta.Display
                 deltaRight -= 5;
             }
 
+            if(keyboardState.IsKeyDown(Keys.F) && previousKeyboardState.IsKeyUp(Keys.F))
+            {
+                WaypointIndices.Add(currentStateIndex);
+                waypointDisplayStates.Add(new DisplayState(States[currentStateIndex], DisplayConsts.WaypointSizePx));
+            }
+            
+            isShowingAllWaypoints = keyboardState.IsKeyDown(Keys.Tab);
+
             // always storing current position even if not moving to preserve pauses in the recording
-            States.Add(new RobotState(States[currentStateIndex], new Datapoint(time: (int)playbackTimer.TotalMilliseconds, States[currentStateIndex].Datapoint.LeftPosition + deltaLeft, States[currentStateIndex].Datapoint.RightPosition + deltaRight)));
+            States.Insert(currentStateIndex + 1, new RobotState(States[currentStateIndex], new Datapoint(time: (int)playbackTimer.TotalMilliseconds, States[currentStateIndex].Datapoint.LeftPosition + deltaLeft, States[currentStateIndex].Datapoint.RightPosition + deltaRight)));
             currentStateIndex++;
-            displayStates.Add(new DisplayState(States[currentStateIndex]));
+            displayStates.Insert(currentStateIndex, new DisplayState(States[currentStateIndex]));
         }
 
         public void Draw(SpriteBatch spriteBatch)
-            => spriteBatch.Draw(
-                    texture: Texture,
-                    destinationRectangle: displayStates[currentStateIndex].DestinationRectangle,
-                    sourceRectangle: sourceRectangle,
-                    color: Color.White,
-                    rotation: displayStates[currentStateIndex].Rotation,
-                    origin: DisplayConsts.RotationOriginPx,
-                    effects: SpriteEffects.None,
-                    layerDepth: 0);
+        {
+            spriteBatch.Draw(
+                texture: Texture,
+                destinationRectangle: displayStates[currentStateIndex].DestinationRectangle,
+                sourceRectangle: sourceRectangle,
+                color: Color.White,
+                rotation: displayStates[currentStateIndex].Rotation,
+                origin: DisplayConsts.RotationOriginPx,
+                effects: SpriteEffects.None,
+                layerDepth: 0);
 
+            if(isShowingAllWaypoints)
+            {
+                for (int i = 0; i < waypointDisplayStates.Count; i++)
+                {
+                    spriteBatch.Draw(
+                        texture: WaypointTexture,
+                        destinationRectangle: waypointDisplayStates[i].DestinationRectangle,
+                        sourceRectangle: sourceRectangle,
+                        color: WaypointColor,
+                        rotation: waypointDisplayStates[i].Rotation,
+                        origin: DisplayConsts.RotationOriginPx,
+                        effects: SpriteEffects.None,
+                        layerDepth: 0);
+
+                    if (i == 0) continue;
+
+                    spriteBatch.DrawLine(
+                        waypointDisplayStates[i - 1].DestinationRectangle.X,
+                        waypointDisplayStates[i - 1].DestinationRectangle.Y,
+                        waypointDisplayStates[i].DestinationRectangle.X,
+                        waypointDisplayStates[i].DestinationRectangle.Y,
+                        Color.Red,
+                        thickness: 3);
+                }
+            }
+            else
+            {
+                for (int i = waypointDisplayStates.Count - 1; i > waypointDisplayStates.Count - 4; i--)
+                {
+                    if (i < 0) break;
+
+                    spriteBatch.Draw(
+                        texture: WaypointTexture,
+                        destinationRectangle: waypointDisplayStates[i].DestinationRectangle,
+                        sourceRectangle: sourceRectangle,
+                        color: WaypointColor,
+                        rotation: waypointDisplayStates[i].Rotation,
+                        origin: DisplayConsts.RotationOriginPx,
+                        effects: SpriteEffects.None,
+                        layerDepth: 0);
+
+                    if (i == 0) continue;
+
+                    spriteBatch.DrawLine(
+                        waypointDisplayStates[i - 1].DestinationRectangle.X,
+                        waypointDisplayStates[i - 1].DestinationRectangle.Y,
+                        waypointDisplayStates[i].DestinationRectangle.X,
+                        waypointDisplayStates[i].DestinationRectangle.Y,
+                        Color.Red,
+                        thickness: 3);
+                }
+            }
+        }
     }
 }

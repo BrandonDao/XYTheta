@@ -9,6 +9,7 @@ namespace XYTheta.Display
         public const int FieldHeightPx = 1350 >> 1;
 
         public const int RobotSizePx = 150;
+        public const int WaypointSizePx = 50;
 
         public static Vector2 RotationOriginPx { get; } = new Vector2(264, 424); // based on texture coordinates
 
