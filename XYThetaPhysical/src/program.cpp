@@ -30,9 +30,11 @@ int main()
     right.run_direct();
 
     const int basePower = 60;
-    const RobotState targetState{100, 200, 90 * M_PI / 180.0f};
+    const RobotState targetState{0, 100, 0};
+    const int minPower = 50;
+    const int minCorrectivePower = 5;
 
-    const float kP = 3;
+    const float kP = 20;
 
     while(true)
     {
@@ -49,23 +51,31 @@ int main()
         int xError = targetState.X - currentState.X;
         float yError = targetState.Y - currentState.Y;
         
-        float targetTheta = tanf(yError / xError);
-        float thetaError = -(targetTheta - currentState.Theta) / targetTheta;
+        float targetTheta = tanf(xError / yError);
+        float thetaError = (targetTheta - currentState.Theta) * 57; // (57 = 180 / pi)
 
         int correctivePower = thetaError * kP;
+
         int leftPower = basePower + correctivePower;
         int rightPower = basePower - correctivePower;
 
-        // if(leftPower > 100) leftPower = 100;
-        // else if(leftPower < -100) leftPower = -100;
+        if(leftPower < 0)
+        {
+            if(leftPower < -100) leftPower = -100;
+            if(rightPower < -100) rightPower = -100;
+        }
+        else
+        {
+            if(leftPower > 100) leftPower = 100;
+            if(rightPower > 100) rightPower = 100;
+        }
 
-        // if(rightPower > 100) rightPower = 100;
-        // else if(rightPower < -100) rightPower = -100;
-
-        // left.set_duty_cycle_sp(leftPower);
-        // right.set_duty_cycle_sp(rightPower);
-
-        std::cout << xError << ", " << yError << ",   " << targetTheta << std::endl;
+        left.set_duty_cycle_sp(leftPower);
+        right.set_duty_cycle_sp(rightPower);
+        
+        // std::cout << (int)(correctivePower) << ", " << (int)(thetaError * 100) << "%" << std::endl;
+        // std::cout << (int)(correctivePower) << ", " << (int)(thetaError * 100) << "%" << std::endl;
+        std::cout << leftPower << ", " << rightPower << ", " << (int)(targetTheta * 180 / M_PI) << ", " << (int)(currentState.Theta * 180 / M_PI) << std::endl;
         //std::cout << "(" << (int)currentState.X << ", " << (int)currentState.Y << ")  theta: " << (int)(currentState.Theta * 180 / M_PI) << std::endl;
     }
 

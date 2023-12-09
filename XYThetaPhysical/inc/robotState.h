@@ -30,11 +30,11 @@ public:
         Theta = previousState.Theta + deltaTheta; // fmod(previousState.Theta + deltaTheta, 2 * M_PI);
 
         float deltaCenter = (deltaL + deltaR) / 2.0f;
-        float deltaX = (float)cos(Theta) * deltaCenter;
-        float deltaY = (float)sin(Theta) * deltaCenter;
+        float deltaX = (float)sin(Theta) * deltaCenter;
+        float deltaY = (float)cos(Theta) * deltaCenter;
 
-        X = previousState.X - deltaX;
-        Y = previousState.Y - deltaY;
+        X = previousState.X + deltaX;
+        Y = previousState.Y + deltaY;
     }
 
     RobotState(float x, float y, float theta)
