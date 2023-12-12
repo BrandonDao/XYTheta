@@ -30,11 +30,11 @@ int main()
     right.run_direct();
 
     const int basePower = 60;
-    const RobotState targetState{0, 100, 0};
+    const RobotState targetState{0, -2500, 0};
     const int minPower = 50;
     const int minCorrectivePower = 5;
 
-    const float kP = 20;
+    const float kP = 5;
 
     while(true)
     {
@@ -48,36 +48,68 @@ int main()
         previousState = currentState;
         currentState = newState;
 
-        int xError = targetState.X - currentState.X;
+        float xError = targetState.X - currentState.X;
         float yError = targetState.Y - currentState.Y;
         
+        if(yError < 0)
+        {
+            if(yError > -0.01f) yError = -0.01f;
+        }
+        else
+        {
+            if(yError < 0.01f) yError = 0.01f;
+        }
+        
         float targetTheta = tanf(xError / yError);
+        if(targetTheta < M_PI / 18 && yError < 0) targetTheta = -M_PI; // M_PI / 18 = 10 degrees
         float thetaError = (targetTheta - currentState.Theta) * 57; // (57 = 180 / pi)
 
-        int correctivePower = thetaError * kP;
+        int turnPower = thetaError * kP;
+        int drivePower;
 
-        int leftPower = basePower + correctivePower;
-        int rightPower = basePower - correctivePower;
+        if(std::abs(turnPower) > 0)
+        {
+            drivePower = basePower / turnPower;
+        }
+        else
+        {
+            drivePower = basePower;
+        }
+
+        int leftPower = basePower + turnPower;
+        int rightPower = basePower - turnPower;
 
         if(leftPower < 0)
         {
             if(leftPower < -100) leftPower = -100;
-            if(rightPower < -100) rightPower = -100;
         }
         else
         {
             if(leftPower > 100) leftPower = 100;
+        }
+
+        if(rightPower > 0)
+        {
             if(rightPower > 100) rightPower = 100;
+        }
+        else
+        {
+            if(rightPower < -100) rightPower = -100;
         }
 
         left.set_duty_cycle_sp(leftPower);
         right.set_duty_cycle_sp(rightPower);
         
+        if(std::abs(xError) + std::abs(yError) < 60) break;
+
         // std::cout << (int)(correctivePower) << ", " << (int)(thetaError * 100) << "%" << std::endl;
         // std::cout << (int)(correctivePower) << ", " << (int)(thetaError * 100) << "%" << std::endl;
-        std::cout << leftPower << ", " << rightPower << ", " << (int)(targetTheta * 180 / M_PI) << ", " << (int)(currentState.Theta * 180 / M_PI) << std::endl;
+        std::cout << (int)currentState.X << ", " << (int)currentState.Y << ", "  << std::endl;
         //std::cout << "(" << (int)currentState.X << ", " << (int)currentState.Y << ")  theta: " << (int)(currentState.Theta * 180 / M_PI) << std::endl;
     }
+
+    left.set_duty_cycle_sp(0);
+    right.set_duty_cycle_sp(0);
 
     std::cout << "Press enter button to stop" << std::endl;
     while (!ev3dev::button::enter.pressed()) { }
