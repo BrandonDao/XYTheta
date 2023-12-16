@@ -12,7 +12,7 @@ namespace constants
     const std::uint8_t StartingYCm = 0;//95;
     const std::uint16_t StartingXDegrees = StartingXCm * DegreesPerCm;
     const std::uint16_t StartingYDegrees = StartingYCm * DegreesPerCm;
-    const float StartingTheta = M_PI / 2.0f;
+    const float StartingTheta = 0; //M_PI / 2.0f;
 
     const float RobotRadiusDeg = 127.21875f; // in degrees
     const float RobotDiameterDeg = 254.4375f; // in degrees

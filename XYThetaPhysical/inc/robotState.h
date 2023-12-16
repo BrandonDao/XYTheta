@@ -12,12 +12,10 @@ struct RobotState
         return baseState;
     }
 
-private:
     RobotState()
-        : LeftPosition{}, RightPosition{}, X{constants::StartingXDegrees}, Y{}, Theta{constants::StartingYDegrees}
+        : LeftPosition{}, RightPosition{}, X{constants::StartingXDegrees}, Y{constants::StartingYDegrees}, Theta{constants::StartingTheta}
     { }
 
-public:
     RobotState(RobotState previousState, int leftPos, int rightPos)
     {
         LeftPosition = leftPos;
