@@ -10,6 +10,16 @@
 #include "ev3dev.h"
 #include "robotState.h"
 
+float ConvertToUnitCircle(const float& input)
+{
+    float output = std::fmod(input, 2 * M_PI);
+    if(output < 0)
+    {
+        output += M_PI;
+    }
+    return output;
+}
+
 int main()
 {
     std::cout << "Press enter button to start" << std::endl;
@@ -29,14 +39,14 @@ int main()
     left.run_direct();
     right.run_direct();
 
-    const int basePower = 60;
+    const int basePower = 50;
     std::vector<RobotState> targetStates{};
     targetStates.emplace_back(0, 1000, 0);
     targetStates.emplace_back(1000, 1000, 0);
     targetStates.emplace_back(1000, 0, 0);
     targetStates.emplace_back(0, 0, 0);
     
-    const float kP = 8;
+    const float kP = 2;
 
     for(auto targetState = std::cbegin(targetStates); targetState != std::cend(targetStates); )
     {
@@ -68,13 +78,21 @@ int main()
             }
         }
         
+        float currentTheta = ConvertToUnitCircle(currentState.Theta);
+        
         float targetTheta = atan2(xError, yError);
-        float thetaError = (targetTheta - currentState.Theta) * 57; // (57 = 180 / pi)
+        
+        float thetaError = targetTheta - currentTheta;
+        float altThetaError = targetTheta - (M_PI - std::abs(targetTheta));
+        if(altThetaError < thetaError)
+        {
+            thetaError = altThetaError;
+        }
 
         int turnPower = thetaError * kP;
         int drivePower;
 
-        if(std::abs(turnPower) > 0) drivePower = basePower / turnPower;
+        if(std::abs(turnPower) > 0) drivePower = basePower / thetaError;
         else drivePower = basePower;
 
         int leftPower = basePower + turnPower;
@@ -104,11 +122,12 @@ int main()
         if(std::abs(xError) + std::abs(yError) < 60)
         {
             targetState++;
+            std::cout << "next state" << std::endl;
         }
 
         // std::cout << (int)(correctivePower) << ", " << (int)(thetaError * 100) << "%" << std::endl;
         // std::cout << (int)(currentState.Theta * 180 / M_PI) << std::endl;
-        // std::cout <<  (int)(targetTheta * 180 / M_PI) << std::endl;
+        std::cout <<  (int)(targetTheta * 180 / M_PI) << std::endl;
         // std::cout << (targetTheta * 180 / M_PI) << std::endl;
         // std::cout << "(" << (int)currentState.X << ", " << (int)currentState.Y << ")  theta: " << (int)(currentState.Theta * 180 / M_PI) << std::endl;
         // std::cout << (int)xError << ", " << (int)yError <<  std::endl;
