@@ -1,21 +1,22 @@
 #include <chrono>
 #include <ctime>
-#include <thread>
+#include <fstream>
+#include <iostream>
 #include <list>
 #include <memory>
-#include <iostream>
+#include <thread>
 
 #include "Timer.h"
 #include "Static.h"
 #include "ev3dev.h"
 #include "robotState.h"
 
-float ConvertToUnitCircle(const float& input)
+float Normalize(const float& input)
 {
-    float output = std::fmod(input, 2 * M_PI);
-    if(output < 0)
+    float output = std::fmod(input, constants::M_2PI);
+    while(output < 0)
     {
-        output += M_PI;
+        output += constants::M_2PI;
     }
     return output;
 }
@@ -39,14 +40,36 @@ int main()
     left.run_direct();
     right.run_direct();
 
-    const int basePower = 50;
+    const int basePower = 60;
     std::vector<RobotState> targetStates{};
-    targetStates.emplace_back(0, 1000, 0);
-    targetStates.emplace_back(1000, 1000, 0);
-    targetStates.emplace_back(1000, 0, 0);
-    targetStates.emplace_back(0, 0, 0);
+
+    // std::ifstream waypointsFileStream{"./WaypointLog.csv"};
+    // while(!waypointsFileStream.is_open())
+    // {
+    //     std::cout << "File could not be opened!" << std::endl;
+    // }
+
+    // std::string xStr;
+    // std::string yStr;
+    // std::string thetaStr;
+    // while(waypointsFileStream.good())
+    // {
+    //     std::getline(waypointsFileStream, xStr);
+    //     std::getline(waypointsFileStream, yStr);
+    //     std::getline(waypointsFileStream, thetaStr);
+
+    //     // std::cout << xStr << ", " << yStr << ", " << thetaStr << std::endl;
+
+    //     targetStates.emplace_back(std::stod(xStr), std::stod(yStr), std::stod(thetaStr));
+    // }
+
+
+    targetStates.emplace_back(0,1500,0);
+    targetStates.emplace_back(1500,1500,0);
+    targetStates.emplace_back(1500,3000,0);
+    targetStates.emplace_back(3000,3000,0);
     
-    const float kP = 2;
+    const float kP = 20;
 
     for(auto targetState = std::cbegin(targetStates); targetState != std::cend(targetStates); )
     {
@@ -78,21 +101,33 @@ int main()
             }
         }
         
-        float currentTheta = ConvertToUnitCircle(currentState.Theta);
-        
-        float targetTheta = atan2(xError, yError);
+        float currentTheta = Normalize(currentState.Theta);
+        float targetTheta = Normalize(std::atan2(xError, yError));
         
         float thetaError = targetTheta - currentTheta;
-        float altThetaError = targetTheta - (M_PI - std::abs(targetTheta));
-        if(altThetaError < thetaError)
+        float altThetaError;
+        if(std::abs(targetTheta) > M_PI)
+        {
+            altThetaError = (targetTheta - constants::M_2PI) - currentTheta;
+        }
+        else
+        {
+            altThetaError = (targetTheta + constants::M_2PI) - currentTheta;
+        }
+
+        // std::cout << "error: " << (int)(thetaError * 180 / M_PI) << "  alt: " << (int)(altThetaError * 180 / M_PI);
+
+        if(std::abs(altThetaError) < std::abs(thetaError))
         {
             thetaError = altThetaError;
         }
 
+        // std::cout << "selected: " << (int)(thetaError * 180 / M_PI) << std::endl;
+
         int turnPower = thetaError * kP;
         int drivePower;
 
-        if(std::abs(turnPower) > 0) drivePower = basePower / thetaError;
+        if(std::abs(turnPower) > 1) drivePower = basePower / thetaError;
         else drivePower = basePower;
 
         int leftPower = basePower + turnPower;
@@ -119,18 +154,16 @@ int main()
         left.set_duty_cycle_sp(leftPower);
         right.set_duty_cycle_sp(rightPower);
         
-        if(std::abs(xError) + std::abs(yError) < 60)
+        if(std::abs(xError) + std::abs(yError) < 180)
         {
             targetState++;
             std::cout << "next state" << std::endl;
         }
 
-        // std::cout << (int)(correctivePower) << ", " << (int)(thetaError * 100) << "%" << std::endl;
-        // std::cout << (int)(currentState.Theta * 180 / M_PI) << std::endl;
-        std::cout <<  (int)(targetTheta * 180 / M_PI) << std::endl;
-        // std::cout << (targetTheta * 180 / M_PI) << std::endl;
-        // std::cout << "(" << (int)currentState.X << ", " << (int)currentState.Y << ")  theta: " << (int)(currentState.Theta * 180 / M_PI) << std::endl;
-        // std::cout << (int)xError << ", " << (int)yError <<  std::endl;
+        // std::cout << "target: " << (int)(targetTheta * 180 / M_PI) << " curr: " << (int)(currentTheta * 180 / M_PI) << " error: " << (altThetaError * 180 / M_PI) << std::endl;
+        // std::cout << "target: " << (int)(targetTheta * 180 / M_PI) << " (" << (int)currentState.X << ", " << (int)currentState.Y << ")  theta: " << (int)(currentTheta * 180 / M_PI) << std::endl;
+        // std::cout << "theta error: " << (int)(thetaError * 180 / M_PI) << "current Theta: " <<  (int)(currentTheta * 180 / M_PI) << std::endl;
+        // std::cout << "turn power: " << turnPower << std::endl;
     }
 
     left.set_duty_cycle_sp(0);

@@ -19,4 +19,6 @@ namespace constants
     
     const float FieldLengthCm = 236.2f;
     const float FieldHeightCm = 114.3f;
+
+    const float M_2PI = 2 * M_PI;
 }
