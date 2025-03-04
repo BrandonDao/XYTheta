@@ -78,6 +78,7 @@ namespace XYTheta
             if (previousKeyboardState.IsKeyUp(Keys.S) && keyboardState.IsKeyDown(Keys.LeftControl) && keyboardState.IsKeyDown(Keys.S))
             {
                 File.WriteAllLines("VirtualControlLog.csv", robot.ExportDatapointsAsCSV());
+                File.WriteAllLines("WaypointLog.txt", robot.ExportWaypoints());
             }
 
             previousKeyboardState = keyboardState;

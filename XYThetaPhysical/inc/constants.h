@@ -8,8 +8,8 @@ namespace constants
 {
     const float DegreesPerCm = 13.3275007291f;
 
-    const std::uint8_t StartingXCm = 0;//23;
-    const std::uint8_t StartingYCm = 0;//95;
+    const std::uint8_t StartingXCm = 23;
+    const std::uint8_t StartingYCm = 95;
     const std::uint16_t StartingXDegrees = StartingXCm * DegreesPerCm;
     const std::uint16_t StartingYDegrees = StartingYCm * DegreesPerCm;
     const float StartingTheta = 0; //M_PI / 2.0f;

@@ -72,6 +72,19 @@ namespace XYTheta.Display
             }
             return output;
         }
+        public string[] ExportWaypoints()
+        {
+            string[] output = new string[WaypointIndices.Count * 3];
+
+            int outputIndex = 0;
+            for (int i = 0; i < WaypointIndices.Count; i++)
+            {
+                output[outputIndex++] = States[WaypointIndices[i]].X.ToString();
+                output[outputIndex++] = Math.Abs(States[WaypointIndices[i]].Y - DisplayConsts.FieldHeightPx).ToString();
+                output[outputIndex++] = (States[WaypointIndices[i]].Theta - (decimal)(Math.PI / 2)).ToString();
+            }
+            return output;
+        }
 
         public void Update(KeyboardState keyboardState, KeyboardState previousKeyboardState, TimeSpan elapsedGameTime)
         {

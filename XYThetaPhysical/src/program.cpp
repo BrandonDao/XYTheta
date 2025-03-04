@@ -43,31 +43,25 @@ int main()
     const int basePower = 60;
     std::vector<RobotState> targetStates{};
 
-    // std::ifstream waypointsFileStream{"./WaypointLog.csv"};
-    // while(!waypointsFileStream.is_open())
-    // {
-    //     std::cout << "File could not be opened!" << std::endl;
-    // }
+    std::ifstream waypointsFileStream{"./WaypointLog.txt"};
+    while(!waypointsFileStream.is_open())
+    {
+        std::cout << "File could not be opened!" << std::endl;
+    }
 
-    // std::string xStr;
-    // std::string yStr;
-    // std::string thetaStr;
-    // while(waypointsFileStream.good())
-    // {
-    //     std::getline(waypointsFileStream, xStr);
-    //     std::getline(waypointsFileStream, yStr);
-    //     std::getline(waypointsFileStream, thetaStr);
+    std::string xStr;
+    std::string yStr;
+    std::string thetaStr;
+    while(waypointsFileStream.good())
+    {
+        std::getline(waypointsFileStream, xStr);
+        std::getline(waypointsFileStream, yStr);
+        std::getline(waypointsFileStream, thetaStr);
 
-    //     // std::cout << xStr << ", " << yStr << ", " << thetaStr << std::endl;
+        std::cout << xStr << ", " << yStr << ", " << thetaStr << std::endl;
 
-    //     targetStates.emplace_back(std::stod(xStr), std::stod(yStr), std::stod(thetaStr));
-    // }
-
-
-    targetStates.emplace_back(0,1500,0);
-    targetStates.emplace_back(1500,1500,0);
-    targetStates.emplace_back(1500,3000,0);
-    targetStates.emplace_back(3000,3000,0);
+        targetStates.emplace_back(std::stod(xStr), std::stod(yStr), std::stod(thetaStr));
+    }
     
     const float kP = 20;
 
